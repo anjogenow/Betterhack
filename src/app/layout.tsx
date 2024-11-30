@@ -1,7 +1,6 @@
 import { Inter } from 'next/font/google';
 import './globals.css';
-import Header from '../components/Header';
-import { Web3Provider } from '../components/Web3Provider';
+import ClientLayout from '../components/ClientLayout';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -18,10 +17,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.className}>
       <body className="min-h-screen">
-        <Web3Provider>
-          <Header />
+        <ClientLayout>
           {children}
-        </Web3Provider>
+        </ClientLayout>
       </body>
     </html>
   );
