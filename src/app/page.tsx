@@ -11,6 +11,8 @@ interface Event {
   teamsLockDate: string;
   endDate: string;
   status: 'upcoming' | 'betting' | 'finished';
+  creatorAddress?: string;
+  createdAt?: string;
 }
 
 export default function Home() {
@@ -78,6 +80,11 @@ export default function Home() {
                   {event.name}
                 </h2>
                 <p className="text-sm text-secondary mt-1">{event.description}</p>
+                {event.creatorAddress && (
+                  <p className="text-xs text-secondary mt-2">
+                    Created by: {event.creatorAddress.slice(0, 6)}...{event.creatorAddress.slice(-4)}
+                  </p>
+                )}
               </div>
               <span className="text-xs text-secondary tabular-nums">
                 {new Date(event.endDate).toLocaleDateString('en-US', { 

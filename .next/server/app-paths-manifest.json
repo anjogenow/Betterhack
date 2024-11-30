@@ -1,7 +1,7 @@
 {
   "/not-found": "app/not-found.js",
-  "/event/[id]/bet/page": "app/event/[id]/bet/page.js",
   "/page": "app/page.js",
-  "/event/[id]/results/page": "app/event/[id]/results/page.js",
-  "/event/[id]/participate/page": "app/event/[id]/participate/page.js"
+  "/event/[id]/bet/page": "app/event/[id]/bet/page.js",
+  "/event/[id]/participate/page": "app/event/[id]/participate/page.js",
+  "/event/[id]/results/page": "app/event/[id]/results/page.js"
 }

@@ -21,11 +21,18 @@ export default function Header() {
   };
 
   const handleEventSubmit = (eventData: any) => {
+    // Add creator's wallet address to event data
+    const eventWithCreator = {
+      ...eventData,
+      creatorAddress: address,
+      createdAt: new Date().toISOString(),
+    };
+
     // Here you would typically send this to your backend/smart contract
-    console.log('New event data:', eventData);
+    console.log('New event data:', eventWithCreator);
     // For now, we'll just add it to localStorage
     const events = JSON.parse(localStorage.getItem('events') || '[]');
-    events.push(eventData);
+    events.push(eventWithCreator);
     localStorage.setItem('events', JSON.stringify(events));
     // Force a page refresh to show the new event
     window.location.reload();
