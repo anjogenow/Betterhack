@@ -1,63 +1,99 @@
 'use client';
-import React, { useState } from 'react';
+
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useAccount } from '@starknet-react/core';
+
+interface Team {
+  id: string;
+  name: string;
+  description: string;
+  members: string[];
+  eventId: string;
+}
+
+interface Event {
+  id: string;
+  name: string;
+  description: string;
+  maxParticipants: number;
+  maxTeamSize: number;
+  teamsLockDate: string;
+  endDate: string;
+  status: 'upcoming' | 'betting' | 'finished';
+  teams?: Team[];
+}
 
 export default function BetPage() {
-  const [timeLeft, setTimeLeft] = useState('2:00:00');
-  const mockTeams = [
-    {
-      title: "Team Alpha",
-      description: "Building a DeFi solution",
-      participants: ["Alice", "Bob", "Charlie"],
-      bets: "1.5 ETH"
-    },
-    {
-      title: "Team Beta",
-      description: "Creating an NFT marketplace",
-      participants: ["David", "Eve", "Frank"],
-      bets: "2.3 ETH"
+  const { id } = useParams();
+  const router = useRouter();
+  const { address } = useAccount();
+  const [event, setEvent] = useState<Event | null>(null);
+
+  useEffect(() => {
+    const events = JSON.parse(localStorage.getItem('events') || '[]');
+    const currentEvent = events.find((e: Event) => e.id === id);
+    if (currentEvent) {
+      // Update event status based on dates
+      const now = new Date();
+      const teamsLockDate = new Date(currentEvent.teamsLockDate);
+      const endDate = new Date(currentEvent.endDate);
+
+      let status = 'upcoming';
+      if (now > endDate) {
+        status = 'finished';
+      } else if (now > teamsLockDate) {
+        status = 'betting';
+      }
+
+      const updatedEvent = { ...currentEvent, status };
+      setEvent(updatedEvent);
+
+      // Redirect if not in betting phase
+      if (status !== 'betting') {
+        router.push(`/event/${id}/${status === 'upcoming' ? 'teams' : 'results'}`);
+      }
     }
-  ];
+  }, [id, router]);
+
+  if (!event) return <div className="p-4">Loading...</div>;
 
   return (
     <main className="max-w-3xl mx-auto px-4 pt-20 pb-12">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-semibold text-primary">Place Your Bets</h1>
-        <div className="text-sm text-secondary bg-gray-800/50 px-3 py-1.5 rounded-full border border-gray-700/50">
-          Event finishes in: {timeLeft}
-        </div>
-      </div>
+      <h1 className="text-2xl font-semibold mb-2 text-primary">{event.name}</h1>
+      <p className="text-sm text-secondary mb-8">{event.description}</p>
+
       <div className="space-y-4">
-        {mockTeams.map((team, index) => (
-          <div key={index} className="group border border-border bg-card rounded-lg p-4 hover:border-blue-500/30 transition-all">
-            <div className="flex justify-between items-start mb-3">
+        <h2 className="text-lg font-medium text-primary">Teams</h2>
+        {event.teams?.map(team => (
+          <div key={team.id} className="border border-border rounded-lg p-4 bg-card">
+            <div className="flex justify-between items-start">
               <div>
-                <h2 className="text-lg font-medium text-primary group-hover:text-blue-500 transition-colors">
-                  {team.title}
-                </h2>
-                <p className="text-sm text-secondary mt-1">{team.description}</p>
+                <h3 className="font-medium text-primary">{team.name}</h3>
+                <p className="text-sm text-secondary mt-1">
+                  Members: {team.members.length}
+                </p>
+                <p className="text-sm text-secondary mt-2">{team.description}</p>
               </div>
-              <div className="text-sm text-secondary bg-gray-800/50 px-3 py-1.5 rounded-full border border-gray-700/50">
-                Total Bets: {team.bets}
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex flex-wrap gap-2">
-                {team.participants.map((participant, i) => (
-                  <span key={i} className="text-sm bg-gray-800/50 text-gray-300 px-3 py-1 rounded-full border border-gray-700/50">
-                    {participant}
-                  </span>
-                ))}
-              </div>
-              <button className="px-4 py-2 bg-green-500/20 text-green-400 rounded-md hover:bg-green-500/30 transition-all text-sm">
+              <button
+                onClick={() => {/* TODO: Implement betting */}}
+                className="px-4 py-2 bg-green-500/20 text-green-400 rounded-md hover:bg-green-500/30 transition-all text-sm"
+              >
                 Place Bet
               </button>
+            </div>
+            <div className="space-y-1 mt-3 pt-3 border-t border-border">
+              {team.members.map(member => (
+                <p key={member} className="text-sm text-secondary">
+                  <span className="px-2 py-1 bg-gray-500/10 rounded-md">
+                    {member.slice(0, 6)}...{member.slice(-4)}
+                  </span>
+                </p>
+              ))}
             </div>
           </div>
         ))}
       </div>
-      <button className="mt-6 w-full py-2 bg-blue-500/20 text-blue-400 rounded-md hover:bg-blue-500/30 transition-all text-sm">
-        View My Bets
-      </button>
     </main>
   );
 } 

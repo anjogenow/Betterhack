@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useAccount } from '@starknet-react/core';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -16,29 +16,136 @@ interface Team {
 interface Event {
   id: string;
   name: string;
+  description: string;
   maxParticipants: number;
   maxTeamSize: number;
+  teamsLockDate: string;
+  endDate: string;
+  status: 'upcoming' | 'betting' | 'finished';
+  creatorAddress?: string;
   teams?: Team[];
   participantCount?: number;
 }
 
 export default function TeamsPage() {
   const { id } = useParams();
+  const router = useRouter();
   const { address } = useAccount();
   const [event, setEvent] = useState<Event | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
   const [newTeamName, setNewTeamName] = useState('');
   const [newTeamDescription, setNewTeamDescription] = useState('');
   const [error, setError] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    maxParticipants: '',
+    maxTeamSize: '',
+    teamsLockDate: '',
+    endDate: ''
+  });
 
   useEffect(() => {
     const events = JSON.parse(localStorage.getItem('events') || '[]');
     const currentEvent = events.find((e: Event) => e.id === id);
     if (currentEvent) {
-      setEvent(currentEvent);
-      setTeams(currentEvent.teams || []);
+      // Update event status based on dates
+      const now = new Date();
+      const teamsLockDate = new Date(currentEvent.teamsLockDate);
+      const endDate = new Date(currentEvent.endDate);
+
+      let status = 'upcoming';
+      if (now > endDate) {
+        status = 'finished';
+      } else if (now > teamsLockDate) {
+        status = 'betting';
+      }
+
+      const updatedEvent = { ...currentEvent, status };
+      setEvent(updatedEvent);
+      setTeams(updatedEvent.teams || []);
+
+      // Initialize edit form
+      setEditForm({
+        maxParticipants: updatedEvent.maxParticipants.toString(),
+        maxTeamSize: updatedEvent.maxTeamSize.toString(),
+        teamsLockDate: new Date(updatedEvent.teamsLockDate).toISOString().slice(0, 16),
+        endDate: new Date(updatedEvent.endDate).toISOString().slice(0, 16)
+      });
+
+      // Redirect if teams are locked
+      if (status !== 'upcoming') {
+        router.push(`/event/${id}/${status === 'betting' ? 'bet' : 'results'}`);
+      }
     }
-  }, [id]);
+  }, [id, router]);
+
+  const handleEditSubmit = () => {
+    if (!event) return;
+
+    const maxParticipants = parseInt(editForm.maxParticipants);
+    const maxTeamSize = parseInt(editForm.maxTeamSize);
+    const teamsLockDate = new Date(editForm.teamsLockDate);
+    const endDate = new Date(editForm.endDate);
+    const now = new Date();
+
+    // Validation
+    if (isNaN(maxParticipants) || maxParticipants < 1) {
+      setError('Maximum participants must be at least 1');
+      return;
+    }
+    if (isNaN(maxTeamSize) || maxTeamSize < 1) {
+      setError('Maximum team size must be at least 1');
+      return;
+    }
+    if (teamsLockDate <= now) {
+      setError('Teams lock date must be in the future');
+      return;
+    }
+    if (endDate <= teamsLockDate) {
+      setError('End date must be after teams lock date');
+      return;
+    }
+
+    // Check if new maxTeamSize is less than any current team size
+    const maxCurrentTeamSize = Math.max(...(teams.map(team => team.members.length) || [0]));
+    if (maxTeamSize < maxCurrentTeamSize) {
+      setError(`Maximum team size cannot be less than current largest team (${maxCurrentTeamSize})`);
+      return;
+    }
+
+    // Check if new maxParticipants is less than current total participants
+    const currentParticipants = teams.reduce((sum, team) => sum + team.members.length, 0);
+    if (maxParticipants < currentParticipants) {
+      setError(`Maximum participants cannot be less than current participants (${currentParticipants})`);
+      return;
+    }
+
+    // Update event in localStorage
+    const events = JSON.parse(localStorage.getItem('events') || '[]');
+    const updatedEvents = events.map((e: Event) => {
+      if (e.id === event.id) {
+        return {
+          ...e,
+          maxParticipants,
+          maxTeamSize,
+          teamsLockDate: teamsLockDate.toISOString(),
+          endDate: endDate.toISOString()
+        };
+      }
+      return e;
+    });
+
+    localStorage.setItem('events', JSON.stringify(updatedEvents));
+    setEvent(prev => prev ? {
+      ...prev,
+      maxParticipants,
+      maxTeamSize,
+      teamsLockDate: teamsLockDate.toISOString(),
+      endDate: endDate.toISOString()
+    } : null);
+    setIsEditing(false);
+    setError('');
+  };
 
   const getUserTeam = () => {
     return teams.find(team => team.members.includes(address || ''));
@@ -151,18 +258,96 @@ export default function TeamsPage() {
 
   const userTeam = getUserTeam();
   const participantCount = teams.reduce((count, team) => count + team.members.length, 0);
+  const isOwner = address && event.creatorAddress === address;
 
   return (
     <main className="max-w-3xl mx-auto px-4 pt-20 pb-12">
-      <h1 className="text-2xl font-semibold mb-2 text-primary">{event.name}</h1>
-      <div className="text-sm text-secondary mb-8">
-        <p>Maximum participants: {participantCount}/{event.maxParticipants}</p>
-        <p>Maximum team size: {event.maxTeamSize}</p>
+      <div className="flex justify-between items-start mb-8">
+        <div>
+          <h1 className="text-2xl font-semibold mb-2 text-primary">{event.name}</h1>
+          <div className="text-sm text-secondary">
+            <p>Maximum participants: {participantCount}/{event.maxParticipants}</p>
+            <p>Maximum team size: {event.maxTeamSize}</p>
+            <p>Teams lock: {new Date(event.teamsLockDate).toLocaleString()}</p>
+            <p>Event ends: {new Date(event.endDate).toLocaleString()}</p>
+          </div>
+        </div>
+        {isOwner && !isEditing && (
+          <button
+            onClick={() => setIsEditing(true)}
+            className="px-4 py-2 bg-blue-500/20 text-blue-400 rounded-md hover:bg-blue-500/30 transition-all text-sm"
+          >
+            Edit Event
+          </button>
+        )}
       </div>
 
       {error && (
         <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-md text-red-500 text-sm">
           {error}
+        </div>
+      )}
+
+      {isEditing && isOwner && (
+        <div className="mb-8 p-4 border border-border rounded-lg bg-card">
+          <h2 className="text-lg font-medium mb-4 text-primary">Edit Event</h2>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm text-secondary mb-1">Maximum Participants</label>
+              <input
+                type="number"
+                value={editForm.maxParticipants}
+                onChange={(e) => setEditForm({ ...editForm, maxParticipants: e.target.value })}
+                className="w-full bg-background border border-border rounded-md px-3 py-2 text-primary text-sm focus:outline-none focus:border-blue-500/50"
+                min="1"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-secondary mb-1">Maximum Team Size</label>
+              <input
+                type="number"
+                value={editForm.maxTeamSize}
+                onChange={(e) => setEditForm({ ...editForm, maxTeamSize: e.target.value })}
+                className="w-full bg-background border border-border rounded-md px-3 py-2 text-primary text-sm focus:outline-none focus:border-blue-500/50"
+                min="1"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-secondary mb-1">Teams Lock Date</label>
+              <input
+                type="datetime-local"
+                value={editForm.teamsLockDate}
+                onChange={(e) => setEditForm({ ...editForm, teamsLockDate: e.target.value })}
+                className="w-full bg-background border border-border rounded-md px-3 py-2 text-primary text-sm focus:outline-none focus:border-blue-500/50"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-secondary mb-1">Event End Date</label>
+              <input
+                type="datetime-local"
+                value={editForm.endDate}
+                onChange={(e) => setEditForm({ ...editForm, endDate: e.target.value })}
+                className="w-full bg-background border border-border rounded-md px-3 py-2 text-primary text-sm focus:outline-none focus:border-blue-500/50"
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setIsEditing(false);
+                  setError('');
+                }}
+                className="flex-1 px-4 py-2 text-secondary hover:text-primary transition-colors text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleEditSubmit}
+                className="flex-1 px-4 py-2 bg-blue-500/20 text-blue-400 rounded-md hover:bg-blue-500/30 transition-all text-sm"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
