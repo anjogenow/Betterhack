@@ -8,6 +8,18 @@ interface CreateEventModalProps {
   onSubmit: (eventData: any) => void;
 }
 
+const EVENT_IMAGES = [
+  { value: '/images/hackathon-1.jpg', label: 'Collaboration' },
+  { value: '/images/hackathon-2.jpg', label: 'Team Meeting' },
+  { value: '/images/hackathon-3.jpg', label: 'Tech Workshop' },
+  { value: '/images/hackathon-4.jpg', label: 'Innovation Space' },
+  { value: '/images/hackathon-5.jpg', label: 'Coding Session' },
+  { value: '/images/default-hackathon.jpg', label: 'Default' },
+  { value: '/images/web3-hackathon.jpg', label: 'Web3' },
+  { value: '/images/starknet-hackathon.jpg', label: 'Starknet' },
+  { value: '/images/ai-blockchain-hackathon.jpg', label: 'AI & Blockchain' },
+];
+
 export default function CreateEventModal({ isOpen, onClose, onSubmit }: CreateEventModalProps) {
   const [formData, setFormData] = useState({
     name: '',
@@ -16,7 +28,16 @@ export default function CreateEventModal({ isOpen, onClose, onSubmit }: CreateEv
     maxTeamSize: '',
     teamsLockDate: '',
     endDate: '',
+    image: EVENT_IMAGES[0].value,
   });
+
+  const [previewImage, setPreviewImage] = useState(EVENT_IMAGES[0].value);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newImage = e.target.value;
+    setFormData({ ...formData, image: newImage });
+    setPreviewImage(newImage);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,6 +77,28 @@ export default function CreateEventModal({ isOpen, onClose, onSubmit }: CreateEv
               className="w-full bg-background border border-border rounded-md px-3 py-2 text-primary text-sm focus:outline-none focus:border-blue-500/50 min-h-[100px]"
               required
             />
+          </div>
+          <div>
+            <label htmlFor="image" className="block text-sm text-secondary mb-1">Event Image</label>
+            <select
+              id="image"
+              value={formData.image}
+              onChange={handleImageChange}
+              className="w-full bg-background border border-border rounded-md px-3 py-2 text-primary text-sm focus:outline-none focus:border-blue-500/50 mb-2"
+            >
+              {EVENT_IMAGES.map((img) => (
+                <option key={img.value} value={img.value}>
+                  {img.label}
+                </option>
+              ))}
+            </select>
+            <div className="w-full h-[120px] rounded-md overflow-hidden">
+              <img 
+                src={previewImage} 
+                alt="Event preview" 
+                className="w-full h-full object-cover"
+              />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
