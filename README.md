@@ -166,7 +166,57 @@ Users can interact with the platform in four distinct roles (one role per event)
 
 ## Getting Started
 
-[To be added: Installation and setup instructions]
+Follow these steps to run the project locally:
+
+1. Clone the repository:
+```bash
+git clone git@github.com:anjogenow/Betterhack.git
+cd Betterhack
+```
+
+2. Install dependencies:
+```bash
+npm install
+# or
+yarn install
+```
+
+3. Create a local environment file:
+```bash
+cp .env.example .env.local
+```
+
+4. Run the development server:
+```bash
+npm run dev
+# or
+yarn dev
+```
+
+5. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+### Requirements
+- Node.js 16.0.0 or higher
+- npm or yarn package manager
+- A modern web browser
+- ArgentX wallet for Starknet interaction
+
+### Available Commands
+```bash
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm run start
+
+# Run linting
+npm run lint
+```
+
+You can start editing the page by modifying `src/app/page.tsx`. The page auto-updates as you edit the file.
 
 ## Contributing
 
