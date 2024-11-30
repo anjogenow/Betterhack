@@ -2,6 +2,13 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
+interface Team {
+  id: string;
+  name: string;
+  members: string[]; // array of wallet addresses
+  eventId: string;
+}
+
 interface Event {
   id: string;
   name: string;
@@ -14,6 +21,8 @@ interface Event {
   creatorAddress?: string;
   createdAt?: string;
   image?: string;
+  teams?: Team[];
+  participantCount?: number;
 }
 
 export default function Home() {
@@ -59,9 +68,15 @@ export default function Home() {
     };
 
     const paths = {
-      upcoming: "participate",
+      upcoming: "teams",
       betting: "bet",
       finished: "results"
+    };
+
+    const labels = {
+      upcoming: "Join Teams",
+      betting: "Betting",
+      finished: "Results"
     };
 
     return (
@@ -69,7 +84,7 @@ export default function Home() {
         href={`/event/${id}/${paths[status as keyof typeof paths]}`} 
         className={`block w-full py-2 text-center text-white rounded-md text-sm font-medium ${styles[status as keyof typeof styles]}`}
       >
-        {status === 'upcoming' ? 'Join Hackathon' : status.charAt(0).toUpperCase() + status.slice(1)}
+        {labels[status as keyof typeof labels]}
       </Link>
     );
   };
