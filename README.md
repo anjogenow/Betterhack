@@ -177,31 +177,16 @@ cd Betterhack
 2. Install dependencies:
 ```bash
 npm install
-# or
-yarn install
 ```
 
-3. Create a local environment file:
-```bash
-cp .env.example .env.local
-```
-
-4. Run the development server:
+3. Start the development server:
 ```bash
 npm run dev
-# or
-yarn dev
 ```
 
-5. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. Open [http://localhost:3000](http://localhost:3000) with your browser
 
-### Requirements
-- Node.js 16.0.0 or higher
-- npm or yarn package manager
-- A modern web browser
-- ArgentX wallet for Starknet interaction
-
-### Available Commands
+### Development Commands
 ```bash
 # Start development server
 npm run dev
@@ -216,12 +201,63 @@ npm run start
 npm run lint
 ```
 
-You can start editing the page by modifying `src/app/page.tsx`. The page auto-updates as you edit the file.
+### Project Structure
+```
+src/
+├── app/                    # Next.js app router pages
+│   ├── event/             # Event-related pages
+│   ├── profile/           # User profile pages
+│   └── page.tsx           # Home page
+├── components/            # Reusable React components
+└── styles/               # Global styles
+
+public/                   # Static assets
+```
+
+### Key Features
+
+#### Event Management
+- Create and manage hackathon events
+- Set event parameters (team size, dates, etc.)
+- Cancel events before team lock date
+
+#### Team System
+- Create and join teams
+- Team size limits
+- Team member management
+- Prevent organizers from joining teams
+
+#### User System
+- Wallet-based authentication
+- Persistent login state
+- Profile management with display names
+- Role-based permissions
+
+#### Results System
+- Organizer can set final rankings
+- Podium display for top 3 teams
+- Detailed team information display
 
 ## Contributing
 
-[To be added: Contribution guidelines]
+1. Create a new branch for your feature:
+```bash
+git checkout -b feature/your-feature-name
+```
+
+2. Make your changes and commit them:
+```bash
+git add .
+git commit -m "Add your feature"
+```
+
+3. Push to your branch:
+```bash
+git push origin feature/your-feature-name
+```
+
+4. Create a Pull Request on GitHub
 
 ## License
 
-[To be added: License information]
+[To be added]

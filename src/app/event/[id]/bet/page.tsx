@@ -141,8 +141,20 @@ export default function BetPage() {
 
   return (
     <main className="max-w-3xl mx-auto px-4 pt-20 pb-12">
-      <h1 className="text-2xl font-semibold mb-2 text-primary">{event.name}</h1>
-      <p className="text-sm text-secondary mb-8">{event.description}</p>
+      <div className="flex justify-between items-start mb-8">
+        <div>
+          <h1 className="text-2xl font-semibold mb-2 text-primary">{event.name}</h1>
+          <p className="text-sm text-secondary">{event.description}</p>
+        </div>
+        <div className="text-right">
+          <p className="text-sm text-secondary mb-1 mr-1">Total Bets</p>
+          <div className="px-4 py-2 bg-card border border-border rounded-lg">
+            <p className="text-xl font-semibold text-primary whitespace-nowrap">
+              {displayedBets.toLocaleString()} STRK
+            </p>
+          </div>
+        </div>
+      </div>
 
       <div className="space-y-4">
         <div className="flex justify-between items-center">

@@ -25,6 +25,7 @@ interface Event {
   image?: string;
   teams?: Team[];
   participantCount?: number;
+  rankings?: any[]; // Assuming a simple array structure for rankings
 }
 
 export default function Home() {
@@ -103,11 +104,13 @@ export default function Home() {
     return () => clearInterval(timer);
   }, [events]);
 
-  const getActionButton = (status: string, id: string, creatorAddress?: string) => {
+  const getActionButton = (status: string, id: string, creatorAddress?: string, hasRankings?: boolean) => {
     const styles = {
       upcoming: "bg-blue-600 hover:bg-blue-700",
       betting: "bg-green-600 hover:bg-green-700",
-      finished: "bg-gray-600 hover:bg-gray-700"
+      finished: hasRankings 
+        ? "bg-purple-600 hover:bg-purple-700" // Results available
+        : "bg-orange-600 hover:bg-orange-700" // Awaiting results
     };
 
     const paths = {
@@ -119,13 +122,16 @@ export default function Home() {
     const labels = {
       upcoming: address === creatorAddress ? "Manage Event" : "Join Teams",
       betting: address === creatorAddress ? "Manage Event" : "Betting",
-      finished: "Results"
+      finished: status === 'finished' && !hasRankings ? "Awaiting Results" : "Results"
     };
+
+    const buttonStyle = styles[status as keyof typeof styles];
+    const finalStyle = typeof buttonStyle === 'function' ? buttonStyle(hasRankings) : buttonStyle;
 
     return (
       <Link 
         href={`/event/${id}/${paths[status as keyof typeof paths]}`} 
-        className={`block w-full py-2 text-center text-white rounded-md text-sm font-medium ${styles[status as keyof typeof styles]}`}
+        className={`block w-full py-2 text-center text-white rounded-md text-sm font-medium ${finalStyle}`}
       >
         {labels[status as keyof typeof labels]}
       </Link>
@@ -203,7 +209,7 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="w-32">
-                  {getActionButton(event.status, event.id, event.creatorAddress)}
+                  {getActionButton(event.status, event.id, event.creatorAddress, event.rankings && event.rankings.length > 0)}
                 </div>
               </div>
             </div>
