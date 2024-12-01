@@ -1,13 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAccount, useConnectors } from '@starknet-react/core';
 
 export default function WalletButton() {
   const { address } = useAccount();
   const { disconnect } = useConnectors();
   const [showLogout, setShowLogout] = useState(false);
+  const [displayText, setDisplayText] = useState('');
+  const [textOpacity, setTextOpacity] = useState(1);
   const [resetTimer, setResetTimer] = useState<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (!address) return;
+    setDisplayText(`${address.slice(0, 6)}...${address.slice(-4)}`);
+  }, [address]);
 
   const handleClick = () => {
     if (showLogout) {
@@ -17,6 +24,7 @@ export default function WalletButton() {
       setShowLogout(true);
       // Clear any existing timer
       if (resetTimer) clearTimeout(resetTimer);
+      
       // Set new timer to hide logout after 3 seconds
       const timer = setTimeout(() => {
         setShowLogout(false);
@@ -25,9 +33,28 @@ export default function WalletButton() {
     }
   };
 
-  if (!address) return null;
+  // Handle text change after color transition
+  useEffect(() => {
+    let textTimer: NodeJS.Timeout;
+    if (showLogout) {
+      setTextOpacity(0);
+      textTimer = setTimeout(() => {
+        setDisplayText('Logout');
+        setTextOpacity(1);
+      }, 150);
+    } else {
+      setTextOpacity(0);
+      textTimer = setTimeout(() => {
+        if (address) {
+          setDisplayText(`${address.slice(0, 6)}...${address.slice(-4)}`);
+          setTextOpacity(1);
+        }
+      }, 150);
+    }
+    return () => clearTimeout(textTimer);
+  }, [showLogout, address]);
 
-  const shortAddress = `${address.slice(0, 6)}...${address.slice(-4)}`;
+  if (!address) return null;
 
   return (
     <button
@@ -40,7 +67,12 @@ export default function WalletButton() {
         }
       `}
     >
-      {showLogout ? 'Logout' : shortAddress}
+      <span 
+        className="transition-opacity duration-150"
+        style={{ opacity: textOpacity }}
+      >
+        {displayText}
+      </span>
     </button>
   );
 } 

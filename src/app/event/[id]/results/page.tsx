@@ -35,6 +35,7 @@ export default function ResultsPage() {
   const { address } = useAccount();
   const [event, setEvent] = useState<Event | null>(null);
   const [isRankingModalOpen, setIsRankingModalOpen] = useState(false);
+  const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
 
   useEffect(() => {
     const events = JSON.parse(localStorage.getItem('events') || '[]');
@@ -89,6 +90,10 @@ export default function ResultsPage() {
     // TODO: Trigger payout distribution
   };
 
+  const handleTeamClick = (teamId: string) => {
+    setExpandedTeam(expandedTeam === teamId ? null : teamId);
+  };
+
   if (!event) return <div className="p-4">Loading...</div>;
 
   const isOrganizer = address && event.creatorAddress === address;
@@ -121,15 +126,20 @@ export default function ResultsPage() {
             <div className="flex justify-center items-end gap-4 mb-8 mt-4">
               {/* Silver - 2nd Place */}
               {event.rankings[1] && (
-                <div className="flex-1 max-w-[200px]">
+                <div 
+                  className="flex-1 max-w-[200px] cursor-pointer group"
+                  onClick={() => handleTeamClick(event.rankings[1].id)}
+                >
                   <div className="border border-border rounded-t-lg p-4 bg-card">
                     <div className="flex items-start gap-4">
                       <div className="w-8 h-8 flex items-center justify-center bg-gray-300 text-gray-700 rounded-full font-medium">
                         2
                       </div>
                       <div>
-                        <h3 className="font-medium text-primary">{event.rankings[1].name}</h3>
-                        <p className="text-sm text-secondary mt-1">{event.rankings[1].description}</p>
+                        <h3 className="font-medium text-primary group-hover:text-blue-400 transition-colors">{event.rankings[1].name}</h3>
+                        {expandedTeam === event.rankings[1].id && (
+                          <p className="text-sm text-secondary mt-1">{event.rankings[1].description}</p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -139,15 +149,20 @@ export default function ResultsPage() {
               
               {/* Gold - 1st Place */}
               {event.rankings[0] && (
-                <div className="flex-1 max-w-[200px]">
+                <div 
+                  className="flex-1 max-w-[200px] cursor-pointer group"
+                  onClick={() => handleTeamClick(event.rankings[0].id)}
+                >
                   <div className="border border-border rounded-t-lg p-4 bg-card">
                     <div className="flex items-start gap-4">
                       <div className="w-8 h-8 flex items-center justify-center bg-yellow-300 text-yellow-700 rounded-full font-medium">
                         1
                       </div>
                       <div>
-                        <h3 className="font-medium text-primary">{event.rankings[0].name}</h3>
-                        <p className="text-sm text-secondary mt-1">{event.rankings[0].description}</p>
+                        <h3 className="font-medium text-primary group-hover:text-blue-400 transition-colors">{event.rankings[0].name}</h3>
+                        {expandedTeam === event.rankings[0].id && (
+                          <p className="text-sm text-secondary mt-1">{event.rankings[0].description}</p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -157,15 +172,20 @@ export default function ResultsPage() {
               
               {/* Bronze - 3rd Place */}
               {event.rankings[2] && (
-                <div className="flex-1 max-w-[200px]">
+                <div 
+                  className="flex-1 max-w-[200px] cursor-pointer group"
+                  onClick={() => handleTeamClick(event.rankings[2].id)}
+                >
                   <div className="border border-border rounded-t-lg p-4 bg-card">
                     <div className="flex items-start gap-4">
                       <div className="w-8 h-8 flex items-center justify-center bg-orange-300 text-orange-700 rounded-full font-medium">
                         3
                       </div>
                       <div>
-                        <h3 className="font-medium text-primary">{event.rankings[2].name}</h3>
-                        <p className="text-sm text-secondary mt-1">{event.rankings[2].description}</p>
+                        <h3 className="font-medium text-primary group-hover:text-blue-400 transition-colors">{event.rankings[2].name}</h3>
+                        {expandedTeam === event.rankings[2].id && (
+                          <p className="text-sm text-secondary mt-1">{event.rankings[2].description}</p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -174,29 +194,36 @@ export default function ResultsPage() {
               )}
             </div>
 
-            {/* Rest of the rankings */}
-            {event.rankings.slice(3).map((team, index) => (
-              <div key={team.id} className="border border-border rounded-lg p-4 bg-card">
-                <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 flex items-center justify-center bg-gray-500/10 text-gray-400 rounded-full font-medium">
-                    {index + 4}
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-primary">{team.name}</h3>
-                    <p className="text-sm text-secondary mt-1">{team.description}</p>
-                    <div className="mt-3 space-y-1">
-                      {team.members.map(member => (
-                        <p key={member} className="text-sm text-secondary">
-                          <span className="px-2 py-1 bg-gray-500/10 rounded-md">
-                            <UserLink address={member} />
-                          </span>
-                        </p>
-                      ))}
+            {/* List of all teams */}
+            <div className="space-y-4">
+              {event.rankings.map((team, index) => (
+                <div key={team.id} className="border border-border rounded-lg p-4 bg-card">
+                  <div className="flex items-start gap-4">
+                    <div className={`w-8 h-8 flex items-center justify-center rounded-full font-medium
+                      ${index === 0 ? 'bg-yellow-300 text-yellow-700' : 
+                        index === 1 ? 'bg-gray-300 text-gray-700' :
+                        index === 2 ? 'bg-orange-300 text-orange-700' :
+                        'bg-gray-500/10 text-gray-400'}`}
+                    >
+                      {index + 1}
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-primary">{team.name}</h3>
+                      <p className="text-sm text-secondary mt-1">{team.description}</p>
+                      <div className="mt-3 space-y-1">
+                        {team.members.map(member => (
+                          <p key={member} className="text-sm text-secondary">
+                            <span className="px-2 py-1 bg-gray-500/10 rounded-md">
+                              <UserLink address={member} />
+                            </span>
+                          </p>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </>
         ) : (
           <p className="text-secondary text-sm">
