@@ -32,6 +32,43 @@ export default function BetPage() {
   const [event, setEvent] = useState<Event | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [isBetModalOpen, setIsBetModalOpen] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<string>('');
+  const [displayedBets, setDisplayedBets] = useState(0);
+  const TOTAL_BETS = 4242; // Default total bets in STRK
+  const ANIMATION_DURATION = 2000; // 2 seconds for the animation
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      if (!event) return;
+
+      const now = new Date().getTime();
+      const endTime = new Date(event.endDate).getTime();
+      const difference = endTime - now;
+
+      if (difference <= 0) {
+        router.push(`/event/${id}/results`);
+        return;
+      }
+
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+      let timeString = '';
+      if (days > 0) timeString += `${days}d `;
+      if (hours > 0 || days > 0) timeString += `${hours}h `;
+      if (minutes > 0 || hours > 0 || days > 0) timeString += `${minutes}m `;
+      timeString += `${seconds}s`;
+
+      setTimeLeft(timeString);
+    };
+
+    calculateTimeLeft();
+    const timer = setInterval(calculateTimeLeft, 1000);
+
+    return () => clearInterval(timer);
+  }, [event, id, router]);
 
   useEffect(() => {
     const events = JSON.parse(localStorage.getItem('events') || '[]');
@@ -59,6 +96,30 @@ export default function BetPage() {
     }
   }, [id, router]);
 
+  useEffect(() => {
+    if (!event) return;
+
+    // Animate the total bets counter
+    const startTime = Date.now();
+    const updateCounter = () => {
+      const currentTime = Date.now();
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
+      
+      // Easing function for smooth animation
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+      const currentValue = Math.floor(TOTAL_BETS * easeOutQuart);
+      
+      setDisplayedBets(currentValue);
+
+      if (progress < 1) {
+        requestAnimationFrame(updateCounter);
+      }
+    };
+
+    requestAnimationFrame(updateCounter);
+  }, [event]);
+
   const handlePlaceBet = (amount: number) => {
     if (!event || !selectedTeam || !address) return;
 
@@ -78,11 +139,29 @@ export default function BetPage() {
 
   return (
     <main className="max-w-3xl mx-auto px-4 pt-20 pb-12">
-      <h1 className="text-2xl font-semibold mb-2 text-primary">{event.name}</h1>
-      <p className="text-sm text-secondary mb-8">{event.description}</p>
+      <div className="flex justify-between items-start mb-8">
+        <div>
+          <h1 className="text-2xl font-semibold mb-2 text-primary">{event.name}</h1>
+          <p className="text-sm text-secondary">{event.description}</p>
+        </div>
+        <div className="text-right">
+          <p className="text-sm text-secondary mb-1 mr-1">Total Bets</p>
+          <div className="px-4 py-2 bg-card border border-border rounded-lg">
+            <p className="text-xl font-semibold text-primary whitespace-nowrap">
+              {displayedBets.toLocaleString()} STRK
+            </p>
+          </div>
+        </div>
+      </div>
 
       <div className="space-y-4">
-        <h2 className="text-lg font-medium text-primary">Teams</h2>
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-medium text-primary">Teams</h2>
+          <div className="px-3 py-1.5 bg-card border border-border rounded-full text-sm text-secondary">
+            <span className="text-primary font-medium">Event ends in: </span>
+            {timeLeft}
+          </div>
+        </div>
         {event.teams?.map(team => (
           <div key={team.id} className="border border-border rounded-lg p-4 bg-card">
             <div className="flex justify-between items-start">

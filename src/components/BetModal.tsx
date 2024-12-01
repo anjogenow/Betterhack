@@ -19,7 +19,7 @@ export default function BetModal({ isOpen, onClose, onSubmit, teamName }: BetMod
         </p>
         <div className="space-y-4">
           <div>
-            <label htmlFor="amount" className="block text-sm text-secondary mb-1">Bet Amount (ETH)</label>
+            <label htmlFor="amount" className="block text-sm text-secondary mb-1">Bet Amount (STRK)</label>
             <input
               type="number"
               id="amount"
