@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import UserLink from '@/components/UserLink';
+import { useAccount } from '@starknet-react/core';
 
 interface Team {
   id: string;
@@ -29,6 +30,7 @@ interface Event {
 export default function Home() {
   const [events, setEvents] = useState<Event[]>([]);
   const [countdowns, setCountdowns] = useState<{ [key: string]: string }>({});
+  const { address } = useAccount();
 
   useEffect(() => {
     // Load events from localStorage
@@ -101,7 +103,7 @@ export default function Home() {
     return () => clearInterval(timer);
   }, [events]);
 
-  const getActionButton = (status: string, id: string) => {
+  const getActionButton = (status: string, id: string, creatorAddress?: string) => {
     const styles = {
       upcoming: "bg-blue-600 hover:bg-blue-700",
       betting: "bg-green-600 hover:bg-green-700",
@@ -114,11 +116,10 @@ export default function Home() {
       finished: "results"
     };
 
-    const event = events.find(e => e.id === id);
     const labels = {
-      upcoming: "Join Teams",
-      betting: "Betting",
-      finished: event?.rankings ? "Results" : "Awaiting Results"
+      upcoming: address === creatorAddress ? "Manage Event" : "Join Teams",
+      betting: address === creatorAddress ? "Manage Event" : "Betting",
+      finished: "Results"
     };
 
     return (
@@ -198,11 +199,11 @@ export default function Home() {
                     <svg className="w-4 h-4 mr-1.5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
-                    max {event.maxTeamSize} per team
+                    {event.maxTeamSize >= event.maxParticipants ? 'No limit' : `max ${event.maxTeamSize} per team`}
                   </div>
                 </div>
                 <div className="w-32">
-                  {getActionButton(event.status, event.id)}
+                  {getActionButton(event.status, event.id, event.creatorAddress)}
                 </div>
               </div>
             </div>

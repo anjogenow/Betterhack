@@ -24,6 +24,7 @@ interface Event {
   endDate: string;
   status: 'upcoming' | 'betting' | 'finished';
   teams?: Team[];
+  creatorAddress: string;
 }
 
 export default function BetPage() {
@@ -140,20 +141,8 @@ export default function BetPage() {
 
   return (
     <main className="max-w-3xl mx-auto px-4 pt-20 pb-12">
-      <div className="flex justify-between items-start mb-8">
-        <div>
-          <h1 className="text-2xl font-semibold mb-2 text-primary">{event.name}</h1>
-          <p className="text-sm text-secondary">{event.description}</p>
-        </div>
-        <div className="text-right">
-          <p className="text-sm text-secondary mb-1 mr-1">Total Bets</p>
-          <div className="px-4 py-2 bg-card border border-border rounded-lg">
-            <p className="text-xl font-semibold text-primary whitespace-nowrap">
-              {displayedBets.toLocaleString()} STRK
-            </p>
-          </div>
-        </div>
-      </div>
+      <h1 className="text-2xl font-semibold mb-2 text-primary">{event.name}</h1>
+      <p className="text-sm text-secondary mb-8">{event.description}</p>
 
       <div className="space-y-4">
         <div className="flex justify-between items-center">
@@ -168,20 +157,23 @@ export default function BetPage() {
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="font-medium text-primary">{team.name}</h3>
-                <p className="text-sm text-secondary mt-1">
-                  Members: {team.members.length}
-                </p>
-                <p className="text-sm text-secondary mt-2">{team.description}</p>
+                <p className="text-sm text-secondary mt-1">{team.description}</p>
               </div>
-              <button
-                onClick={() => {
-                  setSelectedTeam(team);
-                  setIsBetModalOpen(true);
-                }}
-                className="px-4 py-2 bg-green-500/20 text-green-400 rounded-md hover:bg-green-500/30 transition-all text-sm"
-              >
-                Place Bet
-              </button>
+              {address && address !== event.creatorAddress ? (
+                <button
+                  onClick={() => {
+                    setSelectedTeam(team);
+                    setIsBetModalOpen(true);
+                  }}
+                  className="px-4 py-2 bg-green-500/20 text-green-400 rounded-md hover:bg-green-500/30 transition-all text-sm"
+                >
+                  Place Bet
+                </button>
+              ) : address === event.creatorAddress ? (
+                <span className="px-4 py-2 text-secondary text-sm">
+                  Cannot bet on own event
+                </span>
+              ) : null}
             </div>
             <div className="mt-3 space-y-1">
               {team.members.map(member => (

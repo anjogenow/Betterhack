@@ -158,6 +158,13 @@ export default function TeamsPage() {
       return;
     }
 
+    if (!event) return;
+
+    if (address === event.creatorAddress) {
+      setError('Event organizers cannot create or join teams');
+      return;
+    }
+
     if (!newTeamName.trim()) {
       setError('Please enter a team name');
       return;
@@ -203,6 +210,13 @@ export default function TeamsPage() {
   const handleJoinTeam = (teamId: string) => {
     if (!address) {
       setError('Please connect your wallet first');
+      return;
+    }
+
+    if (!event) return;
+
+    if (address === event.creatorAddress) {
+      setError('Event organizers cannot create or join teams');
       return;
     }
 
@@ -277,6 +291,21 @@ export default function TeamsPage() {
     setTeams(updatedTeams);
   };
 
+  const handleCancelEvent = () => {
+    if (!event || !address || address !== event.creatorAddress) return;
+
+    const confirmCancel = window.confirm('Are you sure you want to cancel this event? This action cannot be undone.');
+    if (!confirmCancel) return;
+
+    // Remove event from localStorage
+    const events = JSON.parse(localStorage.getItem('events') || '[]');
+    const updatedEvents = events.filter((e: Event) => e.id !== event.id);
+    localStorage.setItem('events', JSON.stringify(updatedEvents));
+
+    // Redirect to home page
+    router.push('/');
+  };
+
   if (!event) return <div className="p-4">Loading...</div>;
 
   const userTeam = getUserTeam();
@@ -290,19 +319,37 @@ export default function TeamsPage() {
           <h1 className="text-2xl font-semibold mb-2 text-primary">{event.name}</h1>
           <div className="text-sm text-secondary">
             <p>Maximum participants: {participantCount}/{event.maxParticipants}</p>
-            <p>Maximum team size: {event.maxTeamSize}</p>
+            <p>
+              {event.maxTeamSize >= event.maxParticipants ? (
+                'No limit'
+              ) : (
+                <>Maximum team size: {event.maxTeamSize}</>
+              )}
+            </p>
             <p>Teams lock: {new Date(event.teamsLockDate).toLocaleString()}</p>
             <p>Event ends: {new Date(event.endDate).toLocaleString()}</p>
           </div>
         </div>
-        {isOwner && !isEditing && (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="px-4 py-2 bg-blue-500/20 text-blue-400 rounded-md hover:bg-blue-500/30 transition-all text-sm"
-          >
-            Edit Event
-          </button>
-        )}
+        <div className="flex gap-2">
+          {isOwner && !isEditing && (
+            <>
+              <button
+                onClick={() => setIsEditing(true)}
+                className="px-4 py-2 bg-blue-500/20 text-blue-400 rounded-md hover:bg-blue-500/30 transition-all text-sm"
+              >
+                Edit Event
+              </button>
+              {new Date() < new Date(event.teamsLockDate) && (
+                <button
+                  onClick={handleCancelEvent}
+                  className="px-4 py-2 bg-red-500/20 text-red-400 rounded-md hover:bg-red-500/30 transition-all text-sm"
+                >
+                  Cancel Event
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {error && (
@@ -374,7 +421,7 @@ export default function TeamsPage() {
         </div>
       )}
 
-      {!userTeam && (
+      {!userTeam && address !== event.creatorAddress && (
         <div className="mb-8">
           <h2 className="text-lg font-medium mb-4 text-primary">Create New Team</h2>
           <div className="space-y-3">
@@ -405,7 +452,11 @@ export default function TeamsPage() {
       <div className="space-y-4">
         <h2 className="text-lg font-medium text-primary">Teams</h2>
         {teams.length === 0 ? (
-          <p className="text-secondary text-sm">No teams yet. Be the first to create one!</p>
+          <p className="text-secondary text-sm">
+            {address === event.creatorAddress 
+              ? 'No teams have joined yet.'
+              : 'No teams yet. Be the first to create one!'}
+          </p>
         ) : (
           teams.map(team => (
             <div key={team.id} className="border border-border rounded-lg p-4 bg-card">
@@ -417,7 +468,7 @@ export default function TeamsPage() {
                   </p>
                   <p className="text-sm text-secondary mt-2">{team.description}</p>
                 </div>
-                {address && (
+                {address && address !== event.creatorAddress && (
                   team.members.includes(address) ? (
                     <button
                       onClick={() => handleLeaveTeam(team.id)}

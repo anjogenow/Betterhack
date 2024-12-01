@@ -41,13 +41,52 @@ export default function CreateEventModal({ isOpen, onClose, onSubmit }: CreateEv
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate max participants is at least 3
+    const maxParticipants = parseInt(formData.maxParticipants);
+    const maxTeamSize = parseInt(formData.maxTeamSize);
+    if (maxParticipants < 3) {
+      alert('Maximum participants must be at least 3');
+      return;
+    }
+
+    // Validate dates
+    const now = new Date();
+    const teamsLockDate = new Date(formData.teamsLockDate);
+    const endDate = new Date(formData.endDate);
+
+    // Check if lock date is in the past
+    if (teamsLockDate <= now) {
+      alert('Teams lock date must be in the future');
+      return;
+    }
+
+    // Check if end date is at least 12 hours after lock date
+    const minEndDate = new Date(teamsLockDate.getTime() + (12 * 60 * 60 * 1000)); // 12 hours in milliseconds
+    if (endDate <= minEndDate) {
+      alert('Event end date must be at least 12 hours after teams lock date');
+      return;
+    }
+
     const eventData = {
       ...formData,
       id: uuidv4(),
       status: 'upcoming',
+      maxParticipants: maxParticipants,
+      maxTeamSize: maxTeamSize
     };
     onSubmit(eventData);
     onClose();
+  };
+
+  // Get minimum datetime strings for the inputs
+  const now = new Date();
+  const minLockDate = now.toISOString().slice(0, 16); // Format: YYYY-MM-DDThh:mm
+  const getMinEndDate = () => {
+    if (!formData.teamsLockDate) return minLockDate;
+    const lockDate = new Date(formData.teamsLockDate);
+    const minEnd = new Date(lockDate.getTime() + (12 * 60 * 60 * 1000));
+    return minEnd.toISOString().slice(0, 16);
   };
 
   if (!isOpen) return null;
@@ -110,8 +149,9 @@ export default function CreateEventModal({ isOpen, onClose, onSubmit }: CreateEv
                 onChange={(e) => setFormData({ ...formData, maxParticipants: e.target.value })}
                 className="w-full bg-background border border-border rounded-md px-3 py-2 text-primary text-sm focus:outline-none focus:border-blue-500/50"
                 required
-                min="1"
+                min="3"
               />
+              <p className="text-xs text-secondary mt-1">Minimum: 3 participants</p>
             </div>
             <div>
               <label htmlFor="maxTeamSize" className="block text-sm text-secondary mb-1">Max Team Size</label>
@@ -136,7 +176,9 @@ export default function CreateEventModal({ isOpen, onClose, onSubmit }: CreateEv
                 onChange={(e) => setFormData({ ...formData, teamsLockDate: e.target.value })}
                 className="w-full bg-background border border-border rounded-md px-3 py-2 text-primary text-sm focus:outline-none focus:border-blue-500/50"
                 required
+                min={minLockDate}
               />
+              <p className="text-xs text-secondary mt-1">Must be in the future</p>
             </div>
             <div>
               <label htmlFor="endDate" className="block text-sm text-secondary mb-1">Event End Date</label>
@@ -147,7 +189,9 @@ export default function CreateEventModal({ isOpen, onClose, onSubmit }: CreateEv
                 onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                 className="w-full bg-background border border-border rounded-md px-3 py-2 text-primary text-sm focus:outline-none focus:border-blue-500/50"
                 required
+                min={getMinEndDate()}
               />
+              <p className="text-xs text-secondary mt-1">Must be at least 12h after lock date</p>
             </div>
           </div>
           <div className="flex justify-end gap-3 mt-6">

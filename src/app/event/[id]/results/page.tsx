@@ -125,10 +125,10 @@ export default function ResultsPage() {
             {/* Podium for top 3 */}
             <div className="flex justify-center items-end gap-4 mb-8 mt-4">
               {/* Silver - 2nd Place */}
-              {event.rankings[1] && (
+              {event.rankings?.[1] && (
                 <div 
                   className="flex-1 max-w-[200px] cursor-pointer group"
-                  onClick={() => handleTeamClick(event.rankings[1].id)}
+                  onClick={() => handleTeamClick(event.rankings![1].id)}
                 >
                   <div className="border border-border rounded-t-lg p-4 bg-card">
                     <div className="flex items-start gap-4">
@@ -136,7 +136,7 @@ export default function ResultsPage() {
                         2
                       </div>
                       <div>
-                        <h3 className="font-medium text-primary group-hover:text-blue-400 transition-colors">{event.rankings[1].name}</h3>
+                        <h3 className="font-medium text-primary group-hover:text-blue-400 transition-colors">{event.rankings?.[1].name}</h3>
                       </div>
                     </div>
                   </div>
@@ -145,10 +145,10 @@ export default function ResultsPage() {
               )}
               
               {/* Gold - 1st Place */}
-              {event.rankings[0] && (
+              {event.rankings?.[0] && (
                 <div 
                   className="flex-1 max-w-[200px] cursor-pointer group"
-                  onClick={() => handleTeamClick(event.rankings[0].id)}
+                  onClick={() => handleTeamClick(event.rankings![0].id)}
                 >
                   <div className="border border-border rounded-t-lg p-4 bg-card">
                     <div className="flex items-start gap-4">
@@ -156,7 +156,7 @@ export default function ResultsPage() {
                         1
                       </div>
                       <div>
-                        <h3 className="font-medium text-primary group-hover:text-blue-400 transition-colors">{event.rankings[0].name}</h3>
+                        <h3 className="font-medium text-primary group-hover:text-blue-400 transition-colors">{event.rankings?.[0].name}</h3>
                       </div>
                     </div>
                   </div>
@@ -165,10 +165,10 @@ export default function ResultsPage() {
               )}
               
               {/* Bronze - 3rd Place */}
-              {event.rankings[2] && (
+              {event.rankings?.[2] && (
                 <div 
                   className="flex-1 max-w-[200px] cursor-pointer group"
-                  onClick={() => handleTeamClick(event.rankings[2].id)}
+                  onClick={() => handleTeamClick(event.rankings![2].id)}
                 >
                   <div className="border border-border rounded-t-lg p-4 bg-card">
                     <div className="flex items-start gap-4">
@@ -176,7 +176,7 @@ export default function ResultsPage() {
                         3
                       </div>
                       <div>
-                        <h3 className="font-medium text-primary group-hover:text-blue-400 transition-colors">{event.rankings[2].name}</h3>
+                        <h3 className="font-medium text-primary group-hover:text-blue-400 transition-colors">{event.rankings?.[2].name}</h3>
                       </div>
                     </div>
                   </div>
