@@ -73,10 +73,11 @@ export default function Home() {
       finished: "results"
     };
 
+    const event = events.find(e => e.id === id);
     const labels = {
       upcoming: "Join Teams",
       betting: "Betting",
-      finished: "Results"
+      finished: event?.rankings ? "Results" : "Awaiting Results"
     };
 
     return (
