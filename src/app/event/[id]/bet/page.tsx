@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAccount } from '@starknet-react/core';
 import BetModal from '@/components/BetModal';
+import UserLink from '@/components/UserLink';
 
 interface Team {
   id: string;
@@ -182,11 +183,11 @@ export default function BetPage() {
                 Place Bet
               </button>
             </div>
-            <div className="space-y-1 mt-3 pt-3 border-t border-border">
+            <div className="mt-3 space-y-1">
               {team.members.map(member => (
                 <p key={member} className="text-sm text-secondary">
                   <span className="px-2 py-1 bg-gray-500/10 rounded-md">
-                    {member.slice(0, 6)}...{member.slice(-4)}
+                    <UserLink address={member} />
                   </span>
                 </p>
               ))}

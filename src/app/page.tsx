@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import UserLink from '@/components/UserLink';
 
 interface Team {
   id: string;
@@ -27,6 +28,7 @@ interface Event {
 
 export default function Home() {
   const [events, setEvents] = useState<Event[]>([]);
+  const [countdowns, setCountdowns] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
     // Load events from localStorage
@@ -59,6 +61,45 @@ export default function Home() {
 
     setEvents(sortedEvents);
   }, []);
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const newCountdowns: { [key: string]: string } = {};
+      
+      events.forEach(event => {
+        if (event.status === 'betting') {
+          const now = new Date().getTime();
+          const endTime = new Date(event.endDate).getTime();
+          const difference = endTime - now;
+
+          if (difference <= 0) {
+            newCountdowns[event.id] = 'Ended';
+            return;
+          }
+
+          const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+          let timeString = '';
+          if (days > 0) timeString += `${days}d `;
+          if (hours > 0 || days > 0) timeString += `${hours}h `;
+          if (minutes > 0 || hours > 0 || days > 0) timeString += `${minutes}m `;
+          timeString += `${seconds}s`;
+
+          newCountdowns[event.id] = timeString;
+        }
+      });
+
+      setCountdowns(newCountdowns);
+    };
+
+    calculateTimeLeft();
+    const timer = setInterval(calculateTimeLeft, 1000);
+
+    return () => clearInterval(timer);
+  }, [events]);
 
   const getActionButton = (status: string, id: string) => {
     const styles = {
@@ -112,17 +153,37 @@ export default function Home() {
                   <p className="text-sm text-secondary mt-1">{event.description}</p>
                   {event.creatorAddress && (
                     <p className="text-xs text-secondary mt-2">
-                      Created by: {event.creatorAddress.slice(0, 6)}...{event.creatorAddress.slice(-4)}
+                      Created by: <UserLink address={event.creatorAddress} />
                     </p>
                   )}
                 </div>
                 <span className="text-xs text-secondary tabular-nums">
-                  {new Date(event.endDate).toLocaleDateString('en-US', { 
-                    month: 'short', 
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
+                  {event.status === 'betting' ? (
+                    <div className="px-3 py-1.5 bg-card border border-border rounded-full">
+                      <span className="text-primary font-medium">Ends in: </span>
+                      {countdowns[event.id]}
+                    </div>
+                  ) : event.status === 'upcoming' ? (
+                    <>
+                      <span className="text-primary font-medium">Teams lock: </span>
+                      {new Date(event.teamsLockDate).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-primary font-medium">Event ended: </span>
+                      {new Date(event.endDate).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </>
+                  )}
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -131,7 +192,7 @@ export default function Home() {
                     <svg className="w-4 h-4 mr-1.5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
-                    {event.maxParticipants} max participants
+                    {(event.teams || []).reduce((sum, team) => sum + team.members.length, 0)}/{event.maxParticipants} participants
                   </div>
                   <div className="flex items-center">
                     <svg className="w-4 h-4 mr-1.5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

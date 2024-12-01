@@ -1,15 +1,67 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAccount, useConnectors } from '@starknet-react/core';
 import { argentConnector } from './Web3Provider';
 import CreateEventModal from './CreateEventModal';
+import WalletButton from './WalletButton';
+
+interface UserProfile {
+  address: string;
+  name?: string;
+}
 
 export default function Header() {
   const { address } = useAccount();
-  const { connect, disconnect } = useConnectors();
+  const { connect } = useConnectors();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+
+  // Function to load profile
+  const loadProfile = () => {
+    if (address) {
+      const profiles = JSON.parse(localStorage.getItem('userProfiles') || '{}');
+      setProfile(profiles[address] || { address });
+    } else {
+      setProfile(null);
+    }
+  };
+
+  // Initial profile load
+  useEffect(() => {
+    loadProfile();
+  }, [address]);
+
+  // Listen for localStorage changes
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'userProfiles') {
+        loadProfile();
+      }
+    };
+
+    // For changes in other tabs/windows
+    window.addEventListener('storage', handleStorageChange);
+
+    // For changes in the current tab
+    const originalSetItem = localStorage.setItem;
+    localStorage.setItem = function(key: string, value: string) {
+      const event = new StorageEvent('storage', {
+        key: key,
+        newValue: value,
+        oldValue: localStorage.getItem(key),
+        storageArea: localStorage
+      });
+      originalSetItem.apply(this, [key, value]);
+      window.dispatchEvent(event);
+    };
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      localStorage.setItem = originalSetItem;
+    };
+  }, [address]);
 
   const handleCreateEvent = () => {
     if (!address) {
@@ -54,12 +106,22 @@ export default function Header() {
             </div>
           </Link>
           <div className="flex items-center gap-2">
-            <button 
-              onClick={handleCreateEvent}
-              className="px-3 py-1.5 text-sm text-secondary hover:text-primary transition-colors"
-            >
-              Create Event
-            </button>
+            {address && (
+              <>
+                <button 
+                  onClick={handleCreateEvent}
+                  className="px-3 py-1.5 text-sm text-secondary hover:text-primary transition-colors"
+                >
+                  Create Event
+                </button>
+                <Link
+                  href="/profile"
+                  className="px-3 py-1.5 text-sm text-secondary hover:text-primary transition-colors"
+                >
+                  {profile?.name || 'Profile'}
+                </Link>
+              </>
+            )}
             {!address ? (
               <button
                 onClick={() => connect(argentConnector)}
@@ -68,12 +130,7 @@ export default function Header() {
                 Connect Wallet
               </button>
             ) : (
-              <button
-                onClick={() => disconnect()}
-                className="px-3 py-1.5 text-sm bg-blue-500/20 text-blue-400 rounded-md hover:bg-blue-500/30 transition-all"
-              >
-                {address.slice(0, 6)}...{address.slice(-4)}
-              </button>
+              <WalletButton />
             )}
           </div>
         </div>
