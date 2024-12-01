@@ -167,6 +167,13 @@ export default function TeamsPage() {
       return;
     }
 
+    // Check for duplicate team name
+    const existingTeam = teams.find(team => team.name.toLowerCase() === newTeamName.trim().toLowerCase());
+    if (existingTeam) {
+      setError('A team with this name already exists');
+      return;
+    }
+
     const currentTeam = getUserTeam();
     if (currentTeam) {
       handleLeaveTeam(currentTeam.id);
