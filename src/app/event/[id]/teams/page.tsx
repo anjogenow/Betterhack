@@ -212,19 +212,34 @@ export default function TeamsPage() {
       return;
     }
 
+    // First, create a copy of teams
+    let updatedTeams = [...teams];
+
+    // Find and leave current team if exists
     const currentTeam = getUserTeam();
     if (currentTeam) {
-      handleLeaveTeam(currentTeam.id);
+      // Remove user from current team
+      updatedTeams = updatedTeams.map(team => {
+        if (team.id === currentTeam.id) {
+          return { ...team, members: team.members.filter(member => member !== address) };
+        }
+        return team;
+      });
+      // Remove empty teams
+      updatedTeams = updatedTeams.filter(team => team.members.length > 0);
     }
 
-    const updatedTeams = teams.map(team => {
+    // Join new team
+    updatedTeams = updatedTeams.map(team => {
       if (team.id === teamId) {
         return { ...team, members: [...team.members, address] };
       }
       return team;
     });
 
+    // Update storage with all changes at once
     updateTeamsInStorage(updatedTeams);
+    setError('');
   };
 
   const handleLeaveTeam = (teamId: string) => {

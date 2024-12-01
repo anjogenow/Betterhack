@@ -1,61 +1,159 @@
-import React from 'react';
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useAccount } from '@starknet-react/core';
+import RankingModal from '@/components/RankingModal';
+
+interface Team {
+  id: string;
+  name: string;
+  description: string;
+  members: string[];
+  eventId: string;
+  rank?: number;
+}
+
+interface Event {
+  id: string;
+  name: string;
+  description: string;
+  maxParticipants: number;
+  maxTeamSize: number;
+  teamsLockDate: string;
+  endDate: string;
+  status: 'upcoming' | 'betting' | 'finished';
+  creatorAddress?: string;
+  teams?: Team[];
+  rankings?: Team[];
+}
 
 export default function ResultsPage() {
-  const topTeams = [
-    { position: 1, name: "Team Alpha", prize: "5 ETH" },
-    { position: 2, name: "Team Beta", prize: "3 ETH" },
-    { position: 3, name: "Team Gamma", prize: "1 ETH" }
-  ];
+  const { id } = useParams();
+  const router = useRouter();
+  const { address } = useAccount();
+  const [event, setEvent] = useState<Event | null>(null);
+  const [isRankingModalOpen, setIsRankingModalOpen] = useState(false);
 
-  const otherTeams = [
-    { name: "Team Delta", rank: 4 },
-    { name: "Team Epsilon", rank: 5 }
-  ];
+  useEffect(() => {
+    const events = JSON.parse(localStorage.getItem('events') || '[]');
+    const currentEvent = events.find((e: Event) => e.id === id);
+    if (currentEvent) {
+      // Update event status based on dates
+      const now = new Date();
+      const teamsLockDate = new Date(currentEvent.teamsLockDate);
+      const endDate = new Date(currentEvent.endDate);
+
+      let status = 'upcoming';
+      if (now > endDate) {
+        status = 'finished';
+      } else if (now > teamsLockDate) {
+        status = 'betting';
+      }
+
+      const updatedEvent = { ...currentEvent, status };
+      setEvent(updatedEvent);
+
+      // Redirect if not finished
+      if (status !== 'finished') {
+        router.push(`/event/${id}/${status === 'upcoming' ? 'teams' : 'bet'}`);
+      }
+    }
+  }, [id, router]);
+
+  const handleRankingSubmit = (rankedTeams: Team[]) => {
+    if (!event) return;
+
+    // Update event with rankings and change status to results
+    const events = JSON.parse(localStorage.getItem('events') || '[]');
+    const updatedEvents = events.map((e: Event) => {
+      if (e.id === event.id) {
+        return {
+          ...e,
+          rankings: rankedTeams,
+          status: 'finished'
+        };
+      }
+      return e;
+    });
+
+    localStorage.setItem('events', JSON.stringify(updatedEvents));
+    setEvent(prev => prev ? {
+      ...prev,
+      rankings: rankedTeams,
+      status: 'finished'
+    } : null);
+    setIsRankingModalOpen(false);
+
+    // TODO: Trigger payout distribution
+  };
+
+  if (!event) return <div className="p-4">Loading...</div>;
+
+  const isOrganizer = address && event.creatorAddress === address;
+  const canSetRankings = isOrganizer && !event.rankings;
 
   return (
     <main className="max-w-3xl mx-auto px-4 pt-20 pb-12">
-      <h1 className="text-2xl font-semibold mb-8 text-primary">Results</h1>
-      
-      {/* Podium */}
-      <div className="flex justify-center items-end gap-4 mb-8">
-        {/* Silver - 2nd Place */}
-        <div className="w-28 text-center">
-          <div className="bg-gradient-to-b from-gray-300/30 to-gray-400/30 h-24 flex items-end justify-center rounded-t-lg border border-gray-300/30">
-            <p className="mb-2 font-medium text-gray-100">{topTeams[1].name}</p>
-          </div>
-          <div className="bg-gray-800/50 p-2 border-x border-b border-gray-300/20">2nd - {topTeams[1].prize}</div>
+      <div className="flex justify-between items-start mb-8">
+        <div>
+          <h1 className="text-2xl font-semibold mb-2 text-primary">{event.name}</h1>
+          <p className="text-sm text-secondary">{event.description}</p>
         </div>
-        {/* Gold - 1st Place */}
-        <div className="w-28 text-center">
-          <div className="bg-gradient-to-b from-yellow-500/30 to-yellow-600/30 h-28 flex items-end justify-center rounded-t-lg border border-yellow-500/30">
-            <p className="mb-2 font-medium text-yellow-200">{topTeams[0].name}</p>
-          </div>
-          <div className="bg-gray-800/50 p-2 border-x border-b border-yellow-500/20">1st - {topTeams[0].prize}</div>
-        </div>
-        {/* Bronze - 3rd Place */}
-        <div className="w-28 text-center">
-          <div className="bg-gradient-to-b from-orange-700/30 to-orange-800/30 h-20 flex items-end justify-center rounded-t-lg border border-orange-700/30">
-            <p className="mb-2 font-medium text-orange-200">{topTeams[2].name}</p>
-          </div>
-          <div className="bg-gray-800/50 p-2 border-x border-b border-orange-700/20">3rd - {topTeams[2].prize}</div>
-        </div>
+        {canSetRankings && (
+          <button
+            onClick={() => setIsRankingModalOpen(true)}
+            className="px-4 py-2 bg-blue-500/20 text-blue-400 rounded-md hover:bg-blue-500/30 transition-all text-sm"
+          >
+            Set Rankings
+          </button>
+        )}
       </div>
 
-      {/* Other Teams */}
       <div className="space-y-4">
-        {otherTeams.map((team, index) => (
-          <div key={index} className="group border border-border bg-card rounded-lg p-4 hover:border-blue-500/30 transition-all">
-            <div className="flex justify-between items-center">
-              <h2 className="text-lg font-medium text-primary group-hover:text-blue-500 transition-colors">
-                {team.name}
-              </h2>
-              <span className="text-sm text-secondary bg-gray-800/50 px-3 py-1.5 rounded-full border border-gray-700/50">
-                Rank #{team.rank}
-              </span>
+        <h2 className="text-lg font-medium text-primary">
+          {event.rankings ? 'Final Rankings' : 'Awaiting Results'}
+        </h2>
+        {event.rankings ? (
+          event.rankings.map((team, index) => (
+            <div key={team.id} className="border border-border rounded-lg p-4 bg-card">
+              <div className="flex items-start gap-4">
+                <div className="w-8 h-8 flex items-center justify-center bg-blue-500/10 text-blue-400 rounded-full font-medium">
+                  {index + 1}
+                </div>
+                <div>
+                  <h3 className="font-medium text-primary">{team.name}</h3>
+                  <p className="text-sm text-secondary mt-1">{team.description}</p>
+                  <div className="mt-3 space-y-1">
+                    {team.members.map(member => (
+                      <p key={member} className="text-sm text-secondary">
+                        <span className="px-2 py-1 bg-gray-500/10 rounded-md">
+                          {member.slice(0, 6)}...{member.slice(-4)}
+                        </span>
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        ) : (
+          <p className="text-secondary text-sm">
+            {isOrganizer 
+              ? 'As the event organizer, you can set the final rankings.'
+              : 'The event organizer will set the final rankings soon.'}
+          </p>
+        )}
       </div>
+
+      {event.teams && (
+        <RankingModal
+          isOpen={isRankingModalOpen}
+          onClose={() => setIsRankingModalOpen(false)}
+          onSubmit={handleRankingSubmit}
+          teams={event.teams}
+        />
+      )}
     </main>
   );
 } 
