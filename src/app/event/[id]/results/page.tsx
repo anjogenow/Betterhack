@@ -137,9 +137,6 @@ export default function ResultsPage() {
                       </div>
                       <div>
                         <h3 className="font-medium text-primary group-hover:text-blue-400 transition-colors">{event.rankings[1].name}</h3>
-                        {expandedTeam === event.rankings[1].id && (
-                          <p className="text-sm text-secondary mt-1">{event.rankings[1].description}</p>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -160,9 +157,6 @@ export default function ResultsPage() {
                       </div>
                       <div>
                         <h3 className="font-medium text-primary group-hover:text-blue-400 transition-colors">{event.rankings[0].name}</h3>
-                        {expandedTeam === event.rankings[0].id && (
-                          <p className="text-sm text-secondary mt-1">{event.rankings[0].description}</p>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -183,9 +177,6 @@ export default function ResultsPage() {
                       </div>
                       <div>
                         <h3 className="font-medium text-primary group-hover:text-blue-400 transition-colors">{event.rankings[2].name}</h3>
-                        {expandedTeam === event.rankings[2].id && (
-                          <p className="text-sm text-secondary mt-1">{event.rankings[2].description}</p>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -197,7 +188,11 @@ export default function ResultsPage() {
             {/* List of all teams */}
             <div className="space-y-4">
               {event.rankings.map((team, index) => (
-                <div key={team.id} className="border border-border rounded-lg p-4 bg-card">
+                <div 
+                  key={team.id} 
+                  className="border border-border rounded-lg p-4 bg-card cursor-pointer group"
+                  onClick={() => handleTeamClick(team.id)}
+                >
                   <div className="flex items-start gap-4">
                     <div className={`w-8 h-8 flex items-center justify-center rounded-full font-medium
                       ${index === 0 ? 'bg-yellow-300 text-yellow-700' : 
@@ -207,9 +202,11 @@ export default function ResultsPage() {
                     >
                       {index + 1}
                     </div>
-                    <div>
-                      <h3 className="font-medium text-primary">{team.name}</h3>
-                      <p className="text-sm text-secondary mt-1">{team.description}</p>
+                    <div className="flex-1">
+                      <h3 className="font-medium text-primary group-hover:text-blue-400 transition-colors">{team.name}</h3>
+                      {expandedTeam === team.id && (
+                        <p className="text-sm text-secondary mt-1">{team.description}</p>
+                      )}
                       <div className="mt-3 space-y-1">
                         {team.members.map(member => (
                           <p key={member} className="text-sm text-secondary">
