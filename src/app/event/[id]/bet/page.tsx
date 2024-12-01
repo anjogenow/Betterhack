@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAccount } from '@starknet-react/core';
+import BetModal from '@/components/BetModal';
 
 interface Team {
   id: string;
@@ -29,6 +30,8 @@ export default function BetPage() {
   const router = useRouter();
   const { address } = useAccount();
   const [event, setEvent] = useState<Event | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [isBetModalOpen, setIsBetModalOpen] = useState(false);
 
   useEffect(() => {
     const events = JSON.parse(localStorage.getItem('events') || '[]');
@@ -56,6 +59,21 @@ export default function BetPage() {
     }
   }, [id, router]);
 
+  const handlePlaceBet = (amount: number) => {
+    if (!event || !selectedTeam || !address) return;
+
+    // TODO: Implement actual betting logic
+    console.log('Placing bet:', {
+      eventId: event.id,
+      teamId: selectedTeam.id,
+      bettor: address,
+      amount
+    });
+
+    setIsBetModalOpen(false);
+    setSelectedTeam(null);
+  };
+
   if (!event) return <div className="p-4">Loading...</div>;
 
   return (
@@ -76,7 +94,10 @@ export default function BetPage() {
                 <p className="text-sm text-secondary mt-2">{team.description}</p>
               </div>
               <button
-                onClick={() => {/* TODO: Implement betting */}}
+                onClick={() => {
+                  setSelectedTeam(team);
+                  setIsBetModalOpen(true);
+                }}
                 className="px-4 py-2 bg-green-500/20 text-green-400 rounded-md hover:bg-green-500/30 transition-all text-sm"
               >
                 Place Bet
@@ -94,6 +115,18 @@ export default function BetPage() {
           </div>
         ))}
       </div>
+
+      {selectedTeam && (
+        <BetModal
+          isOpen={isBetModalOpen}
+          onClose={() => {
+            setIsBetModalOpen(false);
+            setSelectedTeam(null);
+          }}
+          onSubmit={handlePlaceBet}
+          teamName={selectedTeam.name}
+        />
+      )}
     </main>
   );
 } 
